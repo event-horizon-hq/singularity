@@ -1,0 +1,10 @@
+id = "hytale-test"
+name = "Hytale Test"
+type = "HYTALE"
+
+[environment]
+image = "hello-world"
+
+[[volumes]]
+id = "world"
+target_folder = "/world"
