@@ -1,13 +1,13 @@
 package enum
 
-type Status int8
+type Status string
 
 const (
-	StatusInactive Status = iota
-	StatusError
-	StatusCreating
-	StatusActive
-	StatusRestarting
+	StatusInactive   Status = "INACTIVE"
+	StatusError      Status = "ERROR"
+	StatusCreating   Status = "CREATING"
+	StatusActive     Status = "ACTIVE"
+	StatusRestarting Status = "RESTARTING"
 )
 
 func (s Status) IsValid() bool {
