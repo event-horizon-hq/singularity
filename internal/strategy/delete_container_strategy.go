@@ -25,13 +25,13 @@ func (strategy DeleteContainerStrategy) DeleteContainer(server *data.Server) boo
 
 	_, err := client.ContainerStop(ctx, server.Id(), moby.ContainerStopOptions{})
 	if err != nil {
-		fmt.Errorf("an unexpected error occurred while stopping container. %s", err)
+		fmt.Printf("an unexpected error occurred while stopping container. %s", err)
 		return false
 	}
 
 	_, removeErr := client.ContainerRemove(ctx, server.Id(), moby.ContainerRemoveOptions{})
 	if removeErr != nil {
-		fmt.Errorf("an unexpected error occurred while deleting container. %s", err)
+		fmt.Printf("an unexpected error occurred while deleting container. %s", err)
 		return false
 	}
 

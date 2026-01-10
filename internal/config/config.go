@@ -10,6 +10,7 @@ type Config struct {
 	JwtSecretKey string `toml:"jwt_secret_key"`
 	MongoURI     string `toml:"mongo_uri"`
 	RedisURI     string `toml:"redis_uri"`
+	TrustedProxies  []string `toml:"trusted_proxies"`
 }
 
 func Load(path string) (*Config, error) {

@@ -10,7 +10,6 @@ import (
 
 func Auth(authenticationService *auth.AuthenticationService) gin.HandlerFunc {
 	return func(context *gin.Context) {
-		const BearerSchema = "Bearer "
 		header := context.GetHeader("Authorization")
 
 		if header == "" {
@@ -21,7 +20,7 @@ func Auth(authenticationService *auth.AuthenticationService) gin.HandlerFunc {
 			return
 		}
 
-		tokenString := strings.TrimPrefix(header, BearerSchema)
+		tokenString := strings.TrimPrefix(header, "Bearer ")
 		token, err := authenticationService.Validate(tokenString)
 
 		if err != nil || !token.Valid {

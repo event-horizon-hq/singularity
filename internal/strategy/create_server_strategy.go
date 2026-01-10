@@ -39,6 +39,10 @@ func getAvailablePort(serverManager *manager.ServerManager) int32 {
 		}
 	}
 
+	if highestServerPort == -1 {
+		return 25565
+	}
+
 	return highestServerPort + 1
 }
 

@@ -11,6 +11,6 @@ type Blueprint struct {
 }
 
 type Volume struct {
-	Id           string `toml:"id"`
-	TargetFolder string `toml:"target_folder"`
+	Id           string `json:"id" toml:"id"`
+	TargetFolder string `json:"target_folder" toml:"target_folder"`
 }

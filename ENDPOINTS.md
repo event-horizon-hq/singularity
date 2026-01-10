@@ -12,7 +12,7 @@ All endpoints described below are protected by an authentication middleware and 
 
 ### List All Blueprints
 
-Retrieves a list of all available blueprints.
+Retrieves a list of all P blueprints.
 
 - **URL:** `/v1/blueprints/list`
 - **Method:** `GET`

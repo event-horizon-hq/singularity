@@ -12,6 +12,8 @@ import (
 	mobyClient "github.com/moby/moby/client"
 )
 
+const MB = 1024 * 1024
+
 type CreateContainerStrategy struct {
 	dockerService *docker.Service
 }
@@ -36,7 +38,7 @@ func (strategy CreateContainerStrategy) EnsureOrCreateVolumes(blueprint data.Blu
 	})
 
 	if err != nil {
-		fmt.Errorf("cannot list volumes from docker. %s", err)
+		fmt.Printf("cannot list volumes from docker: %s\n", err)
 		return
 	}
 
@@ -66,7 +68,9 @@ func (strategy CreateContainerStrategy) CreateContainer(server *data.Server) boo
 	client := strategy.dockerService.Client
 
 	blueprint := server.Blueprint
+	image := blueprint.Environment["image"]
 
+	util.PullImageIfNotExists(client, ctx, image)
 	strategy.EnsureOrCreateVolumes(blueprint)
 
 	memoryAmount, err := strconv.ParseInt(blueprint.Environment["memory-amount"], 10, 64)
@@ -82,15 +86,15 @@ func (strategy CreateContainerStrategy) CreateContainer(server *data.Server) boo
 	}
 
 	defaultServerEnv := []string{
-		"SERVER_ID=" + server.Id(),
+		"SERVER_ID=" + server.Discriminator,
 		"SERVER_PORT=" + strconv.Itoa(int(server.Port)),
 	}
 
 	environment := util.MergeMapValuesWithExtras(blueprint.Environment, defaultServerEnv)
 
-	_, err = client.ContainerCreate(ctx, mobyClient.ContainerCreateOptions{
+	result, err := client.ContainerCreate(ctx, mobyClient.ContainerCreateOptions{
 		Name:  server.Id(),
-		Image: blueprint.Environment["image"],
+		Image: image,
 		Config: &container.Config{
 			Env: environment,
 		},
@@ -98,13 +102,18 @@ func (strategy CreateContainerStrategy) CreateContainer(server *data.Server) boo
 			NetworkMode: "host",
 			Binds:       binds,
 			Resources: container.Resources{
-				Memory: memoryAmount,
+				Memory: memoryAmount * MB,
 			},
 		},
 	})
 
 	if err != nil {
 		fmt.Printf("An unexpected error occurred, cannot create container. %s", err)
+		return false
+	}
+
+	_, err = client.ContainerStart(ctx, result.ID, mobyClient.ContainerStartOptions{})
+	if err != nil {
 		return false
 	}
 

@@ -55,7 +55,8 @@ func main() {
 		authenticationService,
 		blueprintManager,
 		serverManager,
-		dockerService)
+		dockerService,
+		configuration)
 }
 
 func RegisterServers(serverRepository *repository.ServerRepository, serverManager *manager.ServerManager) {
@@ -113,8 +114,14 @@ func ReadBlueprints(blueprintManager *manager.BlueprintManager) {
 	log.Println("Blueprints loaded successfully.")
 }
 
-func StartRouter(authenticationService *auth.AuthenticationService, blueprintManager *manager.BlueprintManager, serverManager *manager.ServerManager, dockerService *docker.Service) {
-	router := gin.Default()
+func StartRouter(authenticationService *auth.AuthenticationService, 
+	blueprintManager *manager.BlueprintManager, 
+	serverManager *manager.ServerManager, 
+	dockerService *docker.Service,
+	config *config.Config,
+) {	
+	router := gin.Default()	
+	router.SetTrustedProxies(config.TrustedProxies)
 
 	createContainerStrategy := strategy.CreateNewContainerStrategy(dockerService)
 	deleteContainerStrategy := strategy.CreateNewDeleteContainerStrategy(dockerService)

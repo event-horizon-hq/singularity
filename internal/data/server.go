@@ -6,7 +6,7 @@ type Server struct {
 	Blueprint     Blueprint     `json:"blueprint" bson:"blueprint"`
 	Discriminator string        `json:"discriminator" bson:"discriminator"`
 	Port          int32         `json:"port" bson:"port"`
-	Status        enum.Status   `bson:"status" bson:"status"`
+	Status        enum.Status   `json:"status" bson:"status"`
 	Report        *ServerReport `json:"report" bson:"report"`
 }
 
