@@ -20,10 +20,6 @@ import (
 	moby "github.com/moby/moby/client"
 )
 
-const SingularityChannel = "singularity:messages:channel"
-const QueueSize = 10_000
-const ProtocolVersion = 1
-
 func main() {
 	configuration := ReadConfigData()
 	authenticationService := auth.NewAuthenticationService(configuration.JwtSecretKey)
@@ -114,14 +110,19 @@ func ReadBlueprints(blueprintManager *manager.BlueprintManager) {
 	log.Println("Blueprints loaded successfully.")
 }
 
-func StartRouter(authenticationService *auth.AuthenticationService, 
-	blueprintManager *manager.BlueprintManager, 
-	serverManager *manager.ServerManager, 
+func StartRouter(authenticationService *auth.AuthenticationService,
+	blueprintManager *manager.BlueprintManager,
+	serverManager *manager.ServerManager,
 	dockerService *docker.Service,
 	config *config.Config,
-) {	
-	router := gin.Default()	
-	router.SetTrustedProxies(config.TrustedProxies)
+) {
+	router := gin.Default()
+	trustedProxiesErr := router.SetTrustedProxies(config.TrustedProxies)
+
+	if trustedProxiesErr != nil {
+		log.Fatal(trustedProxiesErr)
+		return
+	}
 
 	createContainerStrategy := strategy.CreateNewContainerStrategy(dockerService)
 	deleteContainerStrategy := strategy.CreateNewDeleteContainerStrategy(dockerService)

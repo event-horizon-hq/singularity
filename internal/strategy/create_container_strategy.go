@@ -70,7 +70,12 @@ func (strategy CreateContainerStrategy) CreateContainer(server *data.Server) boo
 	blueprint := server.Blueprint
 	image := blueprint.Environment["image"]
 
-	util.PullImageIfNotExists(client, ctx, image)
+	pullImageErr := util.PullImageIfNotExists(client, ctx, image)
+	if pullImageErr != nil {
+		fmt.Printf("An unexpected error occurred, cannot pull image %s: %s", image, pullImageErr)
+		return false
+	}
+
 	strategy.EnsureOrCreateVolumes(blueprint)
 
 	memoryAmount, err := strconv.ParseInt(blueprint.Environment["memory-amount"], 10, 64)

@@ -65,6 +65,10 @@ func CreateServerHandler(
 	}
 
 	server := strategy.CreateServer(*blueprint, serverManager)
+	if server == nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "failed to create server"})
+		return
+	}
 
 	server.Status = enum.StatusCreating
 
