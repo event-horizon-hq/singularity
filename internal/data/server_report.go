@@ -1,9 +1,9 @@
 package data
 
 type ServerReport struct {
-	OnlineCount int32 `json:"onlineCount" bson:"onlineCount"`
-	OnlineSince int64 `json:"onlineSince" bson:"onlineSince"`
-	MemoryUsage int64 `json:"memoryUsage" bson:"memoryUsage"`
-	TotalMemory int64 `json:"totalMemory" bson:"totalMemory"`
-	CpuUsage    int64 `json:"cpuUsage" bson:"cpuUsage"`
+	OnlineCount int32 `json:"online_count" bson:"online_count"`
+	OnlineSince int64 `json:"online_since" bson:"online_since"`
+	MemoryUsage int64 `json:"memory_usage" bson:"memory_usage"`
+	TotalMemory int64 `json:"total_memory" bson:"total_memory"`
+	CpuUsage    int64 `json:"cpu_usage" bson:"cpu_usage"`
 }
