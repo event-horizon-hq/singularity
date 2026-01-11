@@ -9,6 +9,7 @@ import (
 
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 type ServerRepository struct {
@@ -21,8 +22,21 @@ func NewServerRepository(database *mongo.Database) *ServerRepository {
 	}
 }
 
-func (serverRepository *ServerRepository) GetAll(ctx context.Context) ([]*data.Server, error) {
-	cursor, err := serverRepository.collection.Find(ctx, bson.M{})
+func (repository *ServerRepository) EnsureIndexes(ctx context.Context) error {
+	_, err := repository.collection.Indexes().CreateOne(ctx, mongo.IndexModel{
+		Keys: bson.D{
+			{Key: "discriminator", Value: 1},
+		},
+		Options: options.Index().
+			SetUnique(true).
+			SetName("unique_discriminator"),
+	})
+
+	return err
+}
+
+func (repository *ServerRepository) GetAll(ctx context.Context) ([]*data.Server, error) {
+	cursor, err := repository.collection.Find(ctx, bson.M{})
 	if err != nil {
 		return nil, err
 	}
@@ -42,13 +56,21 @@ func (serverRepository *ServerRepository) GetAll(ctx context.Context) ([]*data.S
 	return servers, nil
 }
 
-func (serverRepository *ServerRepository) Insert(ctx context.Context, server *data.Server) error {
-	_, err := serverRepository.collection.InsertOne(ctx, server)
+func (repository *ServerRepository) Insert(ctx context.Context, server *data.Server) error {
+	filter := bson.M{"discriminator": server.Discriminator}
+
+	update := bson.M{
+		"$set": server,
+	}
+
+	opts := options.Update().SetUpsert(true)
+
+	_, err := repository.collection.UpdateOne(ctx, filter, update, opts)
 	return err
 }
 
-func (serverRepository *ServerRepository) DeleteByID(ctx context.Context, id string) error {
-	res, err := serverRepository.collection.DeleteOne(ctx, bson.M{"server_id": id})
+func (repository *ServerRepository) DeleteByID(ctx context.Context, id string) error {
+	res, err := repository.collection.DeleteOne(ctx, bson.M{"discriminator": id})
 	if err != nil {
 		return err
 	}

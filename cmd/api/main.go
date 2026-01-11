@@ -13,6 +13,7 @@ import (
 	"singularity/internal/manager"
 	"singularity/internal/repository"
 	"singularity/internal/route/blueprint"
+	"singularity/internal/route/metrics"
 	"singularity/internal/route/server"
 	"singularity/internal/strategy"
 
@@ -33,6 +34,9 @@ func main() {
 
 	blueprintManager := manager.CreateNewBlueprintManager()
 	serverRepository := repository.NewServerRepository(database)
+	
+	serverRepository.EnsureIndexes(context.Background())
+	
 	serverManager := manager.CreateNewServerManager(serverRepository)
 
 	dockerClient, dockerErr := moby.New()
@@ -126,6 +130,10 @@ func StartRouter(authenticationService *auth.AuthenticationService,
 
 	createContainerStrategy := strategy.CreateNewContainerStrategy(dockerService)
 	deleteContainerStrategy := strategy.CreateNewDeleteContainerStrategy(dockerService)
+	
+	metricsGroup := router.Group("/v1/metrics")
+	metricsGroup.Use(middleware.Auth(authenticationService))
+	metrics.Register(metricsGroup, serverManager)
 
 	blueprintGroup := router.Group("/v1/blueprints")
 	blueprintGroup.Use(middleware.Auth(authenticationService))

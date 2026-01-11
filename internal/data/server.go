@@ -5,7 +5,8 @@ import "singularity/internal/enum"
 type Server struct {
 	Blueprint     Blueprint     `json:"blueprint" bson:"blueprint"`
 	Discriminator string        `json:"discriminator" bson:"discriminator"`
-	Port          int32         `json:"port" bson:"port"`
+	Port          int           `json:"port" bson:"port"`
+	MetricsPort   *int           `json:"metrics_port" bson:"metrics_port"`
 	Status        enum.Status   `json:"status" bson:"status"`
 	Report        *ServerReport `json:"report" bson:"report"`
 }

@@ -16,6 +16,7 @@ func CreateServer(blueprint data.Blueprint, serverManager *manager.ServerManager
 		Discriminator: discriminator,
 		Port:          availablePort,
 		Status:        enum.StatusActive,
+		MetricsPort:   nil,
 		Report:        nil,
 	}
 
@@ -27,8 +28,9 @@ func CreateServer(blueprint data.Blueprint, serverManager *manager.ServerManager
 	return &server
 }
 
-func getAvailablePort(serverManager *manager.ServerManager) int32 {
-	var highestServerPort int32 = -1
+
+func getAvailablePort(serverManager *manager.ServerManager) int {
+	var highestServerPort int = -1
 	for _, server := range serverManager.GetAllServers() {
 		if server.Port < 25565 {
 			continue

@@ -99,11 +99,14 @@ func (serverManager *ServerManager) UpdateStatus(id string, status enum.Status) 
 	serverManager.cacheMutex.Lock()
 	defer serverManager.cacheMutex.Unlock()
 
-	s, ok := serverManager.cache[id]
+	server, ok := serverManager.cache[id]
 	if !ok {
 		return false
 	}
-	s.Status = status
+	
+	server.Status = status
+	serverManager.repository.Insert(context.Background(), server)
+	
 	return true
 }
 
@@ -111,10 +114,29 @@ func (serverManager *ServerManager) UpdateReport(id string, report data.ServerRe
 	serverManager.cacheMutex.Lock()
 	defer serverManager.cacheMutex.Unlock()
 
-	s, ok := serverManager.cache[id]
+	server, ok := serverManager.cache[id]
 	if !ok {
 		return false
 	}
-	s.Report = &report
+	
+	server.Report = &report
+	serverManager.repository.Insert(context.Background(), server)
+	
 	return true
+}
+
+func (serverManager *ServerManager) UpdateMetricsPort(id string, metricsPort int) bool {
+	serverManager.cacheMutex.Lock()
+	defer serverManager.cacheMutex.Unlock()
+
+	server, ok := serverManager.cache[id]
+	if !ok {
+		return false
+
+	}
+	
+	server.MetricsPort = &metricsPort
+	serverManager.repository.Insert(context.Background(), server)
+
+	return true	
 }
