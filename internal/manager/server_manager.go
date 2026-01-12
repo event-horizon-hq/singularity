@@ -50,7 +50,7 @@ func (serverManager *ServerManager) AddServer(server *data.Server) bool {
 	serverManager.cacheMutex.Lock()
 	defer serverManager.cacheMutex.Unlock()
 
-	id := server.Id()
+	id := server.Discriminator
 	if _, exists := serverManager.cache[id]; exists {
 		return false
 	}
@@ -68,7 +68,7 @@ func (serverManager *ServerManager) LoadServer(server *data.Server) bool {
 	serverManager.cacheMutex.Lock()
 	defer serverManager.cacheMutex.Unlock()
 
-	id := server.Id()
+	id := server.Discriminator
 	if _, exists := serverManager.cache[id]; exists {
 		return false
 	}
@@ -103,10 +103,10 @@ func (serverManager *ServerManager) UpdateStatus(id string, status enum.Status) 
 	if !ok {
 		return false
 	}
-	
+
 	server.Status = status
 	serverManager.repository.Insert(context.Background(), server)
-	
+
 	return true
 }
 
@@ -118,10 +118,10 @@ func (serverManager *ServerManager) UpdateReport(id string, report data.ServerRe
 	if !ok {
 		return false
 	}
-	
+
 	server.Report = &report
 	serverManager.repository.Insert(context.Background(), server)
-	
+
 	return true
 }
 
@@ -134,9 +134,9 @@ func (serverManager *ServerManager) UpdateMetricsPort(id string, metricsPort int
 		return false
 
 	}
-	
+
 	server.MetricsPort = &metricsPort
 	serverManager.repository.Insert(context.Background(), server)
 
-	return true	
+	return true
 }

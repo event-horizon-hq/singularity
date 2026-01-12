@@ -11,8 +11,6 @@ type Config struct {
 	MongoURI       string   `toml:"mongo_uri"`
 	RedisURI       string   `toml:"redis_uri"`
 	TrustedProxies []string `toml:"trusted_proxies"`
-
-	MetricsEnabled bool `toml:"enabled_metrics"`
 }
 
 func Load(path string) (*Config, error) {
