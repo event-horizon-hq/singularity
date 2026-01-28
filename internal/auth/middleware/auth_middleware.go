@@ -14,7 +14,7 @@ func Auth(authenticationService *auth.AuthenticationService) gin.HandlerFunc {
 
 		if header == "" {
 			context.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{
-				"message": "Invalid API key.",
+				"message": "The header is empty!",
 			})
 
 			return
