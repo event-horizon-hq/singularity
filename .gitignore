@@ -16,3 +16,11 @@ bin/
 *.test
 vendor/
 go.work
+
+# Generated
+gen/
+
+# Local
+.claude/
+blueprints/
+CLAUDE.md

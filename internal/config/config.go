@@ -7,10 +7,11 @@ import (
 )
 
 type Config struct {
-	JwtSecretKey   string   `toml:"jwt_secret_key"`
-	MongoURI       string   `toml:"mongo_uri"`
-	RedisURI       string   `toml:"redis_uri"`
-	TrustedProxies []string `toml:"trusted_proxies"`
+	JwtSecretKey     string   `toml:"jwt_secret_key"`
+	MongoURI         string   `toml:"mongo_uri"`
+	RedisURI         string   `toml:"redis_uri"`
+	TrustedProxies   []string `toml:"trusted_proxies"`
+	BlueprintsFolder string   `toml:"blueprints_folder"`
 }
 
 func Load(path string) (*Config, error) {

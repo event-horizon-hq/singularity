@@ -2,17 +2,18 @@ package strategy
 
 import (
 	"math/rand"
+	"singularity/gen/blueprint"
 	"singularity/internal/data"
 	"singularity/internal/enum"
 	"singularity/internal/manager"
 )
 
-func CreateServer(blueprint data.Blueprint, serverManager *manager.ServerManager) *data.Server {
+func CreateServer(bp blueprint.Blueprint, serverManager *manager.ServerManager) *data.Server {
 	availablePort := getAvailablePort(serverManager)
 	discriminator := GenerateDiscriminator()
 
 	server := data.Server{
-		Blueprint:     blueprint,
+		Blueprint:     bp,
 		Discriminator: discriminator,
 		Port:          availablePort,
 		Status:        enum.StatusActive,
@@ -27,7 +28,6 @@ func CreateServer(blueprint data.Blueprint, serverManager *manager.ServerManager
 
 	return &server
 }
-
 
 func getAvailablePort(serverManager *manager.ServerManager) int {
 	var highestServerPort int = -1

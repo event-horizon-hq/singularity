@@ -1,3 +1,3 @@
+blueprints_folder = "YOUR_BLUEPRINTS_FOLDER"
 jwt_secret_key = "CHANGE_ME_IN_PRODUCTION"
 mongo_uri = "mongodb://localhost:27017"
-redis_uri = "127.0.0.1:6379"

@@ -34,9 +34,9 @@ func main() {
 
 	blueprintManager := manager.CreateNewBlueprintManager()
 	serverRepository := repository.NewServerRepository(database)
-	
+
 	serverRepository.EnsureIndexes(context.Background())
-	
+
 	serverManager := manager.CreateNewServerManager(serverRepository)
 
 	dockerClient, dockerErr := moby.New()
@@ -49,7 +49,7 @@ func main() {
 
 	RegisterServers(serverRepository, serverManager)
 
-	ReadBlueprints(blueprintManager)
+	ReadBlueprints(configuration, blueprintManager)
 	ReadAccessToken(authenticationService)
 	StartRouter(
 		authenticationService,
@@ -106,8 +106,9 @@ func ReadConfigData() *config.Config {
 	return cfg
 }
 
-func ReadBlueprints(blueprintManager *manager.BlueprintManager) {
-	if _, blueprintErr := blueprintManager.LoadBlueprints("./blueprints"); blueprintErr != nil {
+func ReadBlueprints(config *config.Config, blueprintManager *manager.BlueprintManager) {
+
+	if _, blueprintErr := blueprintManager.LoadBlueprints(config.BlueprintsFolder); blueprintErr != nil {
 		log.Fatal(blueprintErr)
 	}
 
@@ -130,14 +131,14 @@ func StartRouter(authenticationService *auth.AuthenticationService,
 
 	createContainerStrategy := strategy.CreateNewContainerStrategy(dockerService)
 	deleteContainerStrategy := strategy.CreateNewDeleteContainerStrategy(dockerService)
-	
+
 	metricsGroup := router.Group("/v1/metrics")
 	metricsGroup.Use(middleware.Auth(authenticationService))
 	metrics.Register(metricsGroup, serverManager)
 
 	blueprintGroup := router.Group("/v1/blueprints")
 	blueprintGroup.Use(middleware.Auth(authenticationService))
-	blueprint.Register(blueprintGroup, blueprintManager)
+	blueprint.Register(blueprintGroup, blueprintManager, config.BlueprintsFolder)
 
 	serverGroup := router.Group("/v1/servers")
 	serverGroup.Use(middleware.Auth(authenticationService))

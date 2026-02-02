@@ -3,178 +3,106 @@
 > [!WARNING]
 > **Educational project only.**
 > This project is not intended for production use.
-> For production-ready ecosystems, see **SimpleCloud** or **CloudNet**.
-
----
 
 ## Overview
 
-**Singularity** is a lightweight **control-plane** built as part of the **Event Horizon** study project.
+**Singularity** is a lightweight control-plane for managing containerized game servers.
 
-Its purpose is to experiment with:
-
-* server lifecycle management
-* service discovery
-* basic scaling orchestration
-* inter-service communication
-
-Target use case: **Hytale server infrastructures**, with a strong focus on **minimalism**, **explicit behavior**, and **low cognitive overhead**.
-
-Singularity does **not** run game servers.
-It coordinates metadata, state, and orchestration signals consumed by external agents and containers.
-
----
-
-## Role in Event Horizon
-
-Within the Event Horizon ecosystem, Singularity acts as the **central coordinator**.
-
-Responsibilities:
-
-* Track registered servers and their runtime state
-* Expose an HTTP API for nodes and services
-* Store ephemeral state and metadata
-* Provide basic scaling and orchestration hooks
-
-Non-responsibilities:
-
-* No binary distribution
-* No automatic high-availability
-
----
+It coordinates metadata, state, and orchestration signals consumed by containers. Singularity does **not** run game servers directly - it manages their lifecycle through Docker.
 
 ## Technology Stack
 
-Chosen for simplicity, performance, and ecosystem maturity.
-
-* **Language:** Go 1.25
-* **Web Framework:** Gin
-* **Database:** MongoDB
-  Used for persistent metadata and historical state.
-* **Key-Value Store:** Redis
-  Used for ephemeral state, heartbeats, and fast lookups.
-* **Containerization:** Docker & Docker Compose
-
----
+- **Language:** Go 1.25
+- **Web Framework:** Gin
+- **Database:** MongoDB
+- **Containerization:** Docker
+- **Configuration:** [Pkl](https://pkl-lang.org/)
 
 ## Project Structure
 
-Standard Go layout with strict separation of concerns:
-
 ```
 cmd/
- └─ api/            # Application entrypoint
+  api/                  # Application entrypoint
 
 internal/
- ├─ auth/           # JWT authentication
- ├─ config/         # Configuration loading (TOML)
- ├─ data/           # MongoDB repositories
- ├─ docker/         # Container and runtime interaction
- ├─ route/          # HTTP routes and handlers
- └─ strategy/       # Scaling and orchestration strategies
+  auth/                 # JWT authentication
+  config/               # Configuration loading
+  data/                 # Data models
+  docker/               # Container interaction
+  manager/              # Blueprint and server managers
+  route/                # HTTP routes
+  strategy/             # Container strategies
 
-blueprints/
- └─ *.toml          # Blueprints configuration
+pkl/
+  Blueprint.pkl         # Blueprint schema
+
+gen/
+  blueprint/            # Generated Go code from Pkl
 ```
 
----
+## API
 
-## API Overview
+### Blueprints
 
-Singularity exposes a RESTful HTTP API consumed by game nodes and auxiliary services.
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `GET` | `/v1/blueprints/list` | List all blueprints |
+| `GET` | `/v1/blueprints/:id` | Get blueprint by ID |
+| `POST` | `/v1/blueprints/reload` | Reload blueprints from disk |
 
-### Server Endpoints
+### Servers
 
-* `GET    /v1/servers`
-  List all registered servers
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `GET` | `/v1/servers` | List servers |
+| `POST` | `/v1/servers` | Create server |
+| `GET` | `/v1/servers/:id` | Get server |
+| `DELETE` | `/v1/servers/:id` | Delete server |
+| `PATCH` | `/v1/servers/:id/status` | Update status |
+| `PATCH` | `/v1/servers/:id/report` | Update metrics |
+| `POST` | `/v1/servers/:id/restart` | Restart server |
 
-* `POST   /v1/servers`
-  Create a new server from a blueprint
+### Metrics
 
-* `GET    /v1/servers/:id`
-  Retrieve server details
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `GET` | `/v1/metrics/prometheus` | Prometheus service discovery |
 
-* `DELETE /v1/servers/:id`
-  Delete a server and its container
-
-* `PATCH  /v1/servers/:id/status`
-  Update server lifecycle status
-
-* `PATCH  /v1/servers/:id/report`
-  Update runtime metrics / report
-
-* `POST   /v1/servers/:id/restart`
-  Restart a server instance
-
----
-
-## Getting Started
+## Development
 
 ### Prerequisites
 
-* Go 1.25+
-* Docker
-* Docker Compose
+- Go 1.25+
+- Docker
+- [Pkl CLI](https://pkl-lang.org/main/current/pkl-cli/index.html)
 
----
-
-### Installation
-
-Clone the repository:
+### Setup
 
 ```bash
 git clone <repository-url>
-go build -o singularity-api ./cmd/api
+go mod download
 ```
 
-Edit `config.toml` and define:
+### Regenerating Blueprint Code
 
-* `jwt_secret_key`
-* MongoDB URI
-* Redis URI
-
----
-
-### Running with Docker
+After modifying `pkl/Blueprint.pkl`:
 
 ```bash
-docker compose up --build
-go build cmd\api\main.go
+pkl-gen-go pkl/Blueprint.pkl --base-path singularity
 ```
 
-Default services:
+### Building
 
-* API: `http://localhost:8080`
-* MongoDB: `localhost:27017`
-* Redis: `localhost:6379`
+```bash
+go build -o singularity ./cmd/api
+```
 
----
+### Running
 
-## Non-Goals
-
-This project intentionally does **not** attempt to solve:
-
-* High availability
-* Leader election
-* Distributed consensus
-* Auto-healing
-* Production-grade security
-* Multi-region deployments
-
-If you need those, this project is the wrong tool.
-
----
-
-## Contributing
-
-This is a study project.
-Contributions are welcome as long as they:
-
-* keep complexity low
-* avoid over-engineering
-* align with the experimental nature of the project
-
----
+```bash
+docker compose up -d   # MongoDB
+./singularity
+```
 
 ## License
 

@@ -1,27 +1,27 @@
 package manager
 
 import (
+	"context"
 	"os"
 	"path/filepath"
-	"singularity/internal/data"
+	"singularity/gen/blueprint"
+	"strings"
 	"sync"
-
-	"github.com/pelletier/go-toml/v2"
 )
 
 type BlueprintManager struct {
-	blueprintCache map[string]*data.Blueprint
+	blueprintCache map[string]*blueprint.Blueprint
 	cacheMutex     sync.RWMutex
 }
 
 func CreateNewBlueprintManager() *BlueprintManager {
 	return &BlueprintManager{
-		blueprintCache: make(map[string]*data.Blueprint),
+		blueprintCache: make(map[string]*blueprint.Blueprint),
 		cacheMutex:     sync.RWMutex{},
 	}
 }
 
-func (blueprintManager *BlueprintManager) GetBlueprint(id string) (*data.Blueprint, bool) {
+func (blueprintManager *BlueprintManager) GetBlueprint(id string) (*blueprint.Blueprint, bool) {
 	blueprintManager.cacheMutex.RLock()
 	defer blueprintManager.cacheMutex.RUnlock()
 
@@ -30,11 +30,11 @@ func (blueprintManager *BlueprintManager) GetBlueprint(id string) (*data.Bluepri
 	return blueprint, ok
 }
 
-func (blueprintManager *BlueprintManager) GetAllBlueprints() []*data.Blueprint {
+func (blueprintManager *BlueprintManager) GetAllBlueprints() []*blueprint.Blueprint {
 	blueprintManager.cacheMutex.RLock()
 	defer blueprintManager.cacheMutex.RUnlock()
 
-	blueprints := make([]*data.Blueprint, 0, len(blueprintManager.blueprintCache))
+	blueprints := make([]*blueprint.Blueprint, 0, len(blueprintManager.blueprintCache))
 	for _, bp := range blueprintManager.blueprintCache {
 		blueprints = append(blueprints, bp)
 	}
@@ -42,42 +42,67 @@ func (blueprintManager *BlueprintManager) GetAllBlueprints() []*data.Blueprint {
 	return blueprints
 }
 
-func (blueprintManager *BlueprintManager) LoadBlueprint(path string) (*data.Blueprint, error) {
-	file, err := os.ReadFile(path)
+func (blueprintManager *BlueprintManager) LoadBlueprint(path string) (*blueprint.Blueprint, error) {
+	ctx := context.Background()
 
+	bp, err := blueprint.LoadFromPath(ctx, path)
 	if err != nil {
 		return nil, err
 	}
 
-	var blueprint data.Blueprint
+	return &bp, nil
+}
 
-	if err := toml.Unmarshal(file, &blueprint); err != nil {
-		return nil, err
+func (blueprintManager *BlueprintManager) ReloadBlueprints(dir string) (int, error) {
+	blueprintManager.cacheMutex.Lock()
+	blueprintManager.blueprintCache = make(map[string]*blueprint.Blueprint)
+	blueprintManager.cacheMutex.Unlock()
+
+	_, err := blueprintManager.LoadBlueprints(dir)
+	if err != nil {
+		return 0, err
 	}
 
-	return &blueprint, nil
+	blueprintManager.cacheMutex.RLock()
+	count := len(blueprintManager.blueprintCache)
+	blueprintManager.cacheMutex.RUnlock()
+
+	return count, nil
 }
 
 func (blueprintManager *BlueprintManager) LoadBlueprints(dir string) (bool, error) {
-	entries, err := os.ReadDir(dir)
-	if err != nil {
-		return false, err
-	}
-
-	for _, entry := range entries {
-		if entry.IsDir() || filepath.Ext(entry.Name()) != ".toml" {
-			continue
+	err := filepath.WalkDir(dir, func(path string, entry os.DirEntry, err error) error {
+		if err != nil {
+			return err
 		}
 
-		path := filepath.Join(dir, entry.Name())
-		blueprint, err := blueprintManager.LoadBlueprint(path)
+		if entry.IsDir() {
+			return nil
+		}
+
+		if filepath.Ext(entry.Name()) != ".pkl" {
+			return nil
+		}
+
+		// Skip base.pkl files (they are templates, not concrete blueprints)
+		if strings.HasSuffix(entry.Name(), "base.pkl") || strings.HasPrefix(entry.Name(), "Reference") {
+			return nil
+		}
+
+		bp, err := blueprintManager.LoadBlueprint(path)
 		if err != nil {
-			return false, err
+			return err
 		}
 
 		blueprintManager.cacheMutex.Lock()
-		blueprintManager.blueprintCache[blueprint.Id] = blueprint
+		blueprintManager.blueprintCache[bp.Id] = bp
 		blueprintManager.cacheMutex.Unlock()
+
+		return nil
+	})
+
+	if err != nil {
+		return false, err
 	}
 
 	return true, nil

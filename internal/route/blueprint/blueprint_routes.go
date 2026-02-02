@@ -2,12 +2,13 @@ package blueprint
 
 import (
 	"net/http"
+	"singularity/internal/dto"
 	"singularity/internal/manager"
 
 	"github.com/gin-gonic/gin"
 )
 
-func Register(group *gin.RouterGroup, blueprintManager *manager.BlueprintManager) {
+func Register(group *gin.RouterGroup, blueprintManager *manager.BlueprintManager, blueprintsFolder string) {
 	group.GET("/list", func(c *gin.Context) {
 		ListAllBlueprintsHandler(c, blueprintManager)
 	})
@@ -15,11 +16,19 @@ func Register(group *gin.RouterGroup, blueprintManager *manager.BlueprintManager
 	group.GET("/:id", func(c *gin.Context) {
 		GetBlueprintHandler(c, blueprintManager)
 	})
+
+	group.POST("/reload", func(c *gin.Context) {
+		ReloadBlueprintsHandler(c, blueprintManager, blueprintsFolder)
+	})
 }
 
 func ListAllBlueprintsHandler(c *gin.Context, bm *manager.BlueprintManager) {
 	blueprints := bm.GetAllBlueprints()
-	c.JSON(http.StatusOK, blueprints)
+	response := make([]dto.BlueprintResponse, len(blueprints))
+	for i, bp := range blueprints {
+		response[i] = dto.NewBlueprintResponse(bp)
+	}
+	c.JSON(http.StatusOK, response)
 }
 
 func GetBlueprintHandler(c *gin.Context, bm *manager.BlueprintManager) {
@@ -33,5 +42,19 @@ func GetBlueprintHandler(c *gin.Context, bm *manager.BlueprintManager) {
 		return
 	}
 
-	c.JSON(http.StatusOK, blueprint)
+	c.JSON(http.StatusOK, dto.NewBlueprintResponse(blueprint))
+}
+
+func ReloadBlueprintsHandler(c *gin.Context, bm *manager.BlueprintManager, blueprintsFolder string) {
+	count, err := bm.ReloadBlueprints(blueprintsFolder)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": err.Error(),
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"reloaded": count,
+	})
 }

@@ -1,0 +1,230 @@
+/// Singularity Blueprint Schema v1
+///
+/// This module defines the structure for container blueprints used by the Singularity platform.
+/// Blueprints are templates that describe how to deploy and configure containerized applications.
+///
+/// ## Usage
+///
+/// Create a new blueprint by amending this module:
+///
+/// ```pkl
+/// amends "package://github.com/event-horizon-hq/singularity/pkl/Blueprint.pkl"
+///
+/// id = "my-app"
+/// name = "My Application"
+/// type = "web"
+/// image = "nginx:latest"
+/// ```
+@go.Package { name = "singularity/gen/blueprint" }
+module singularity.Blueprint
+
+import "package://pkg.pkl-lang.org/pkl-go/pkl.golang@0.9.0#/go.pkl"
+
+/// A valid Docker image reference.
+///
+/// Examples:
+/// - `"nginx:latest"`
+/// - `"ghcr.io/org/image:v1.0.0"`
+/// - `"registry.example.com/app:sha-abc123"`
+typealias DockerImage = String(matches(Regex(#"^[\w.\-/:]+$"#)))
+
+/// Environment variable name following POSIX conventions.
+///
+/// Must be uppercase with underscores (UPPER_SNAKE_CASE).
+///
+/// Examples:
+/// - `"DATABASE_URL"`
+/// - `"MAX_CONNECTIONS"`
+/// - `"JAVA_OPTS"`
+typealias EnvVarName = String(matches(Regex(#"^[A-Z][A-Z0-9_]*$"#)))
+
+/// Volume identifier for persistent storage.
+///
+/// Must be lowercase with hyphens (kebab-case).
+///
+/// Examples:
+/// - `"app-data"`
+/// - `"minecraft-world"`
+/// - `"postgres-db"`
+typealias VolumeId = String(matches(Regex(#"^[a-z][a-z0-9\-]*$"#)))
+
+
+/// Unique identifier for this blueprint.
+///
+/// Used internally to reference and manage instances. Should be URL-safe and descriptive.
+///
+/// Example: `"minecraft-vanilla"`, `"postgres-15"`, `"nginx-proxy"`
+id: String
+
+/// Human-readable display name shown in the UI.
+///
+/// Example: `"Minecraft: Java Edition"`, `"PostgreSQL 15"`, `"Nginx Reverse Proxy"`
+name: String
+
+/// Category identifier for grouping related blueprints.
+///
+/// Example: `"minecraft"`, `"database"`, `"web"`
+type: String
+
+/// Optional author or maintainer information.
+///
+/// Example: `"Event Horizon <support@eventhorizon.com>"`
+author: String?
+
+/// Docker image used to create containers from this blueprint.
+///
+/// Example: `"itzg/minecraft-server:java21"`, `"postgres:15-alpine"`
+image: DockerImage
+
+/// Resource allocation and limits for the container.
+///
+/// Example:
+/// ```pkl
+/// resources {
+///   memory = 2048
+///   cpu = 2.0
+/// }
+/// ```
+class Resources {
+  /// Memory limit in megabytes (MB).
+  ///
+  /// Default: `512` (512 MB)
+  memory: UInt = 512
+
+  /// CPU core allocation.
+  ///
+  /// Values can be fractional: `0.5` = half core, `2.0` = two cores.
+  ///
+  /// Default: `1.0` (one core)
+  cpu: Float = 1.0
+}
+
+resources: Resources = new {}
+
+/// Environment variables injected into the container at runtime.
+///
+/// Keys must follow UPPER_SNAKE_CASE convention.
+///
+/// Example:
+/// ```pkl
+/// environment {
+///   ["DATABASE_URL"] = "postgres://localhost:5432/db"
+///   ["LOG_LEVEL"] = "info"
+/// }
+/// ```
+environment: Mapping<EnvVarName, String> = new {}
+
+/// Persistent volume mount configuration.
+///
+/// Example:
+/// ```pkl
+/// new Volume {
+///   id = "app-data"
+///   targetFolder = "/var/lib/app"
+///   readOnly = false
+/// }
+/// ```
+class Volume {
+  /// Unique identifier for the Docker volume.
+  id: VolumeId
+
+  /// Absolute path inside the container where the volume is mounted.
+  targetFolder: String
+
+  /// Mount the volume as read-only. Default: `false`
+  readOnly: Boolean = false
+}
+
+/// List of volumes to attach to the container.
+volumes: Listing<Volume> = new {}
+
+/// Docker network mode.
+///
+/// - `"bridge"`: Default isolated network with port mapping support.
+/// - `"host"`: Container shares the host's network stack directly.
+/// - `"none"`: No network access.
+///
+/// Default: `"bridge"`
+networkMode: "bridge"|"host"|"none" = "bridge"
+
+/// Health check configuration to monitor container status.
+///
+/// Example:
+/// ```pkl
+/// healthCheck {
+///   test { "CMD-SHELL"; "curl -f http://localhost/ || exit 1" }
+///   interval = 30
+///   timeout = 10
+///   retries = 3
+///   startPeriod = 60
+/// }
+/// ```
+class HealthCheck {
+  /// Command to execute for health checking.
+  ///
+  /// Formats:
+  /// - `["CMD-SHELL", "command"]`: Run command in a shell.
+  /// - `["CMD", "executable", "arg1", ...]`: Run executable directly.
+  test: Listing<String>
+
+  /// Time between health checks in seconds. Default: `30`
+  interval: UInt = 30
+
+  /// Maximum time to wait for a check to complete in seconds. Default: `30`
+  timeout: UInt = 30
+
+  /// Consecutive failures required to mark as unhealthy. Default: `3`
+  retries: UInt = 3
+
+  /// Grace period before health checks start in seconds. Default: `0`
+  startPeriod: UInt = 0
+}
+
+healthCheck: HealthCheck?
+
+/// Override the image's default entrypoint.
+///
+/// Example: `{ "/bin/sh"; "-c" }`
+entrypoint: Listing<String>?
+
+/// Override the image's default command.
+///
+/// Example: `{ "nginx"; "-g"; "daemon off;" }`
+cmd: Listing<String>?
+
+/// Working directory for the container process.
+///
+/// Example: `"/app"`
+workingDir: String?
+
+/// Run the container process as this user ID.
+userId: UInt?
+
+/// Run the container process as this group ID.
+groupId: UInt?
+
+/// Container log driver configuration.
+///
+/// Example:
+/// ```pkl
+/// logging {
+///   driver = "json-file"
+///   options {
+///     ["max-size"] = "10m"
+///     ["max-file"] = "3"
+///   }
+/// }
+/// ```
+class Logging {
+  /// Logging driver name.
+  ///
+  /// Common drivers: `"json-file"`, `"syslog"`, `"journald"`, `"fluentd"`, `"none"`
+  ///
+  /// Default: `"json-file"`
+  driver: String = "json-file"
+
+  /// Driver-specific options.
+  options: Mapping<String, String> = new {}
+}
+
+logging: Logging?
