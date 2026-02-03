@@ -133,12 +133,11 @@ func StartRouter(authenticationService *auth.AuthenticationService,
 	createContainerStrategy := strategy.CreateNewContainerStrategy(dockerService)
 	deleteContainerStrategy := strategy.CreateNewDeleteContainerStrategy(dockerService)
 
-	// Routes that accept only Slave tokens
+	// Routes that require Master token only
 	metricsGroup := router.Group("/v1/metrics")
 	metricsGroup.Use(middleware.ServerOnly(authenticationService))
 	metrics.RegisterServerOnly(metricsGroup, serverManager)
 
-	// Routes that accept only Master tokens
 	tokenGroup := router.Group("/v1/tokens")
 	tokenGroup.Use(middleware.ServerOnly(authenticationService))
 	token.Register(tokenGroup, authenticationService)
