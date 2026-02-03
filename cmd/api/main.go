@@ -15,6 +15,7 @@ import (
 	"singularity/internal/route/blueprint"
 	"singularity/internal/route/metrics"
 	"singularity/internal/route/server"
+	"singularity/internal/route/token"
 	"singularity/internal/strategy"
 
 	"github.com/gin-gonic/gin"
@@ -132,10 +133,21 @@ func StartRouter(authenticationService *auth.AuthenticationService,
 	createContainerStrategy := strategy.CreateNewContainerStrategy(dockerService)
 	deleteContainerStrategy := strategy.CreateNewDeleteContainerStrategy(dockerService)
 
+	// Routes that accept only Slave tokens
 	metricsGroup := router.Group("/v1/metrics")
-	metricsGroup.Use(middleware.Auth(authenticationService))
-	metrics.Register(metricsGroup, serverManager)
+	metricsGroup.Use(middleware.ServerOnly(authenticationService))
+	metrics.RegisterServerOnly(metricsGroup, serverManager)
 
+	// Routes that accept only Master tokens
+	tokenGroup := router.Group("/v1/tokens")
+	tokenGroup.Use(middleware.ServerOnly(authenticationService))
+	token.Register(tokenGroup, authenticationService)
+
+	serverOnlyGroup := router.Group("/v1/servers")
+	serverOnlyGroup.Use(middleware.ServerOnly(authenticationService))
+	server.RegisterServerOnly(serverOnlyGroup, serverManager, deleteContainerStrategy)
+
+	// Routes that accept both Master and Slave tokens
 	blueprintGroup := router.Group("/v1/blueprints")
 	blueprintGroup.Use(middleware.Auth(authenticationService))
 	blueprint.Register(blueprintGroup, blueprintManager, config.BlueprintsFolder)

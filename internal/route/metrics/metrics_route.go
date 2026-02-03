@@ -13,7 +13,7 @@ type PrometheusTargetGroup struct {
 	Labels  map[string]string `json:"labels,omitempty"`
 }
 
-func Register(group *gin.RouterGroup, serverManager *manager.ServerManager) {
+func RegisterServerOnly(group *gin.RouterGroup, serverManager *manager.ServerManager) {
 	group.GET("targets", func(ctx *gin.Context) {
 		GetTargetsHandler(ctx, serverManager)
 	})

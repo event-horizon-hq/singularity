@@ -28,22 +28,26 @@ func Register(group *gin.RouterGroup,
 		CreateServerHandler(context, createContainerStrategy, blueprintManager, serverManager)
 	})
 
+	group.POST("/:id/restart", func(context *gin.Context) {
+		RestartServerHandler(context, serverManager, deleteContainerStrategy, createContainerStrategy)
+	})
+}
+
+func RegisterServerOnly(group *gin.RouterGroup,
+	serverManager *manager.ServerManager,
+	deleteContainerStrategy strategy.DeleteContainerStrategy) {
+
 	group.DELETE("/:id", func(context *gin.Context) {
 		DeleteServerHandler(context, serverManager, deleteContainerStrategy)
-	})
-
-	group.PATCH("/:id/report", func(context *gin.Context) {
-		UpdateServerReportHandler(context, serverManager)
 	})
 
 	group.PATCH("/:id/status", func(context *gin.Context) {
 		UpdateServerStatusHandler(context, serverManager)
 	})
 
-	group.POST("/:id/restart", func(context *gin.Context) {
-		RestartServerHandler(context, serverManager, deleteContainerStrategy, createContainerStrategy)
+	group.PATCH("/:id/report", func(context *gin.Context) {
+		UpdateServerReportHandler(context, serverManager)
 	})
-
 }
 
 func CreateServerHandler(
