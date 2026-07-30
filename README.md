@@ -1,9 +1,5 @@
 # Singularity
 
-> [!WARNING]
-> **Educational project only.**
-> This project is not intended for production use.
-
 ## Overview
 
 **Singularity** is a lightweight control-plane for managing containerized game servers.
